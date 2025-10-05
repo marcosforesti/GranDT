@@ -2,10 +2,19 @@ import io
 import requests
 import pandas as pd
 import streamlit as st
-from docx import Document
 from docx.shared import Pt
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from io import BytesIO
+
+import importlib.util, sys, subprocess
+def _ensure(pkg_name, pip_name=None):
+    if importlib.util.find_spec(pkg_name) is None:
+        subprocess.check_call([sys.executable, "-m", "pip", "install",
+                               pip_name or pkg_name, "lxml==5.3.0"])
+_ensure("docx", "python-docx==1.1.2")
+# --------------------------------------------------------
+
+from docx import Document
 
 st.set_page_config(page_title="LA Gran DT — Equivalencias", page_icon="📄", layout="wide")
 
