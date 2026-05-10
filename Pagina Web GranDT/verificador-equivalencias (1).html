@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Verificador de Equivalencias — ITBA SCE</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F5F3EE;
+    --surface: #FFFFFF;
+    --surface2: #F0EDE6;
+    --border: #DDD9D0;
+    --border2: #C8C4BB;
+    --text: #1A1816;
+    --text2: #5A564F;
+    --text3: #9A9590;
+    --accent: #1A3A5C;
+    --accent-light: #E8EFF6;
+    --accent2: #2E6DA4;
+    --green: #2D6A4F;
+    --green-bg: #E8F5EE;
+    --red: #9B2335;
+    --red-bg: #FCEEF0;
+    --amber: #7A4F1A;
+    --amber-bg: #FDF3E3;
+    --radius: 8px;
+    --radius-lg: 14px;
+    --font: 'DM Sans', sans-serif;
+    --mono: 'DM Mono', monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  /* HEADER */
+  .header {
+    background: var(--accent);
+    color: white;
+    padding: 20px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-left { display: flex; align-items: center; gap: 14px; }
+  .header-logo {
+    width: 36px; height: 36px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: 600; letter-spacing: -1px;
+  }
+  .header h1 { font-size: 17px; font-weight: 500; letter-spacing: -0.3px; }
+  .header p { font-size: 12px; opacity: 0.6; margin-top: 1px; }
+  .header-actions { display: flex; gap: 10px; }
+  .btn-ghost {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: white;
+    padding: 7px 14px;
+    border-radius: var(--radius);
+    font-family: var(--font);
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-ghost:hover { background: rgba(255,255,255,0.18); }
+
+  /* LAYOUT */
+  .app { display: flex; min-height: calc(100vh - 66px); }
+  .sidebar {
+    width: 280px;
+    min-width: 280px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 24px 20px;
+    overflow-y: auto;
+    max-height: calc(100vh - 66px);
+    position: sticky;
+    top: 66px;
+  }
+  .main { flex: 1; padding: 28px 32px; overflow-y: auto; max-width: 900px; }
+
+  /* SIDEBAR */
+  .sidebar-section { margin-bottom: 28px; }
+  .sidebar-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 10px;
+  }
+  .form-group { margin-bottom: 14px; }
+  .form-group label { display: block; font-size: 13px; color: var(--text2); margin-bottom: 5px; font-weight: 500; }
+  select, input[type="text"] {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    background: var(--bg);
+    font-family: var(--font);
+    font-size: 14px;
+    color: var(--text);
+    appearance: none;
+    -webkit-appearance: none;
+    transition: border-color 0.15s;
+  }
+  select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%239A9590' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 30px; }
+  select:focus, input[type="text"]:focus { outline: none; border-color: var(--accent2); }
+
+  .rules-box {
+    background: var(--accent-light);
+    border: 1px solid #C2D5E8;
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    font-size: 12.5px;
+    color: var(--accent);
+    line-height: 1.6;
+  }
+  .rules-box strong { display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 6px; opacity: 0.7; }
+  .rules-box ul { list-style: none; padding: 0; }
+  .rules-box ul li { padding: 3px 0 3px 14px; position: relative; }
+  .rules-box ul li::before { content: '·'; position: absolute; left: 4px; color: var(--accent2); font-size: 16px; line-height: 1; }
+
+  /* STATUS SUMMARY */
+  .status-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 14px 16px;
+  }
+  .stat-card .stat-label { font-size: 11.5px; color: var(--text3); margin-bottom: 4px; }
+  .stat-card .stat-value { font-size: 26px; font-weight: 500; letter-spacing: -1px; color: var(--text); font-family: var(--mono); }
+  .stat-card.ok .stat-value { color: var(--green); }
+  .stat-card.warn .stat-value { color: var(--red); }
+
+  /* VALIDATION CHIPS */
+  .validation-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+  .chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 100px;
+    font-size: 12.5px;
+    font-weight: 500;
+    border: 1px solid transparent;
+  }
+  .chip.ok { background: var(--green-bg); color: var(--green); border-color: #A8D5BB; }
+  .chip.fail { background: var(--red-bg); color: var(--red); border-color: #F0B8C0; }
+  .chip.warn { background: var(--amber-bg); color: var(--amber); border-color: #F0D0A0; }
+  .chip.neutral { background: var(--surface2); color: var(--text2); border-color: var(--border); }
+  .chip-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+  /* TABLE */
+  .table-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .table-header h2 { font-size: 16px; font-weight: 500; }
+  .btn-add {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: var(--radius);
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: opacity 0.15s;
+  }
+  .btn-add:hover { opacity: 0.88; }
+  .btn-add svg { width: 14px; height: 14px; }
+
+  .courses-table {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+  .ct-head {
+    display: grid;
+    grid-template-columns: 28px 1fr 130px 1fr 1fr 90px;
+    gap: 0;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 14px;
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    color: var(--text3);
+  }
+  .ct-row {
+    display: grid;
+    grid-template-columns: 28px 1fr 130px 1fr 1fr 90px;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    padding: 10px 14px;
+    align-items: start;
+    transition: background 0.1s;
+  }
+  .ct-row:last-child { border-bottom: none; }
+  .ct-row:hover { background: #FAFAF8; }
+  .ct-row.empty-row { opacity: 0.4; }
+  .row-num {
+    font-size: 12px;
+    color: var(--text3);
+    font-family: var(--mono);
+    padding-top: 8px;
+  }
+  .ct-row select, .ct-row input[type="text"] {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    padding: 7px 10px;
+    font-size: 13px;
+    border-radius: 6px;
+    margin-right: 8px;
+    width: 100%;
+  }
+  .ct-row select:focus, .ct-row input[type="text"]:focus {
+    border-color: var(--accent2);
+    background: white;
+  }
+  .col-itba { display: flex; flex-direction: column; gap: 5px; }
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 100px;
+    font-size: 11.5px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .badge-ok { background: var(--green-bg); color: var(--green); }
+  .badge-warn { background: var(--amber-bg); color: var(--amber); }
+  .badge-empty { background: var(--surface2); color: var(--text3); }
+  .badge-error { background: var(--red-bg); color: var(--red); }
+  .btn-del {
+    background: none;
+    border: none;
+    color: var(--text3);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    font-size: 16px;
+    transition: color 0.15s;
+    line-height: 1;
+    margin-top: 4px;
+  }
+  .btn-del:hover { color: var(--red); }
+  .empty-state {
+    text-align: center;
+    padding: 48px 20px;
+    color: var(--text3);
+  }
+  .empty-state p { font-size: 14px; margin-top: 8px; }
+
+  /* EQUIVALENCES PANEL */
+  .equiv-hint {
+    margin-top: 4px;
+    font-size: 11px;
+    color: var(--text3);
+    font-style: italic;
+  }
+  .equiv-match { color: var(--green); font-style: normal; }
+  .equiv-no-match { color: var(--red); font-style: normal; }
+
+  /* MODAL / PANEL */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(10,8,5,0.4);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    width: 560px;
+    max-width: 95vw;
+    max-height: 85vh;
+    overflow-y: auto;
+    border: 1px solid var(--border2);
+  }
+  .modal-head {
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .modal-head h3 { font-size: 16px; font-weight: 500; }
+  .modal-body { padding: 20px 24px; }
+  .modal-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; }
+  .btn-close { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text3); line-height: 1; }
+  .btn-primary {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 9px 20px;
+    border-radius: var(--radius);
+    font-family: var(--font);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .btn-secondary {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border2);
+    padding: 9px 20px;
+    border-radius: var(--radius);
+    font-family: var(--font);
+    font-size: 14px;
+    cursor: pointer;
+  }
+
+  /* RULES EDITOR */
+  .rules-editor-row {
+    display: grid;
+    grid-template-columns: 1fr 80px 80px 80px 80px;
+    gap: 8px;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .rules-editor-row:last-child { border-bottom: none; }
+  .rules-editor-row .rule-uni { font-weight: 500; font-size: 12px; }
+  .rules-editor-row input[type="number"] {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    font-family: var(--mono);
+    font-size: 13px;
+    text-align: center;
+    background: var(--bg);
+  }
+  .rules-editor-header {
+    display: grid;
+    grid-template-columns: 1fr 80px 80px 80px 80px;
+    gap: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text3);
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* LOADING */
+  .loading-bar {
+    height: 2px;
+    background: var(--accent2);
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 0;
+    transition: width 0.3s;
+    z-index: 999;
+  }
+  .loading-text {
+    text-align: center;
+    padding: 40px;
+    color: var(--text2);
+    font-size: 14px;
+  }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 24px;
+  }
+  .tab-btn {
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 10px 18px;
+    font-family: var(--font);
+    font-size: 14px;
+    color: var(--text2);
+    cursor: pointer;
+    margin-bottom: -1px;
+    transition: color 0.15s;
+  }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 500; }
+
+  /* RESPONSIVE */
+  @media (max-width: 768px) {
+    .app { flex-direction: column; }
+    .sidebar { width: 100%; min-width: 0; max-height: none; position: static; }
+    .ct-head, .ct-row { grid-template-columns: 28px 1fr 1fr 80px; }
+    .ct-head .col-tipo, .ct-row .col-tipo { display: none; }
+    .status-bar { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<div class="loading-bar" id="loadingBar"></div>
+
+<header class="header">
+  <div class="header-left">
+    <div class="header-logo">SC</div>
+    <div>
+      <h1>Verificador de Equivalencias</h1>
+      <p>ITBA — Programa de Doble Titulación</p>
+    </div>
+  </div>
+  <div class="header-actions">
+    <button class="btn-ghost" onclick="openRulesEditor()">Ver reglas</button>
+    <button class="btn-ghost" onclick="exportResult()">Exportar resumen</button>
+  </div>
+</header>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Configuración</div>
+      <div class="form-group">
+        <label>Universidad</label>
+        <select id="sel-uni" onchange="onUniChange()">
+          <option value="">— Seleccionar —</option>
+          <option value="Polimi">Polimi</option>
+          <option value="Polito">Polito</option>
+          <option value="Rice-MIE">Rice — MIE</option>
+          <option value="Rice-MEML">Rice — MEML</option>
+          <option value="UniBo">UniBo</option>
+          <option value="Purdue">Purdue</option>
+        </select>
+      </div>
+      <div class="form-group" id="track-group" style="display:none">
+        <label id="track-label">Track</label>
+        <select id="sel-track" onchange="renderRows()">
+          <option value="">— Todos / Sin track —</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="sidebar-section" id="rules-display" style="display:none">
+      <div class="sidebar-label">Reglas del programa</div>
+      <div class="rules-box" id="rules-content"></div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Base de datos</div>
+      <div style="font-size:12px; color:var(--text3); line-height:1.6;">
+        <div id="db-status">Cargando datos...</div>
+        <button class="btn-ghost" onclick="reloadData()" style="margin-top:10px; width:100%; background:var(--surface2); color:var(--text); border-color:var(--border2);">Recargar base</button>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div id="loading-state" class="loading-text">Cargando base de datos desde Google Sheets...</div>
+
+    <div id="app-content" style="display:none">
+      <div class="status-bar">
+        <div class="stat-card" id="sc-total">
+          <div class="stat-label">Materias ingresadas</div>
+          <div class="stat-value" id="sv-total">0</div>
+        </div>
+        <div class="stat-card" id="sc-ok">
+          <div class="stat-label">Con equivalencia</div>
+          <div class="stat-value" id="sv-ok">0</div>
+        </div>
+        <div class="stat-card" id="sc-missing">
+          <div class="stat-label">Sin equivalencia</div>
+          <div class="stat-value" id="sv-missing">0</div>
+        </div>
+        <div class="stat-card" id="sc-valid">
+          <div class="stat-label">Validación</div>
+          <div class="stat-value" id="sv-valid">—</div>
+        </div>
+      </div>
+
+      <div class="validation-strip" id="validation-chips"></div>
+
+      <div class="table-header">
+        <h2>Materias a cursar</h2>
+        <button class="btn-add" onclick="addRow()">
+          <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="7" y1="1" x2="7" y2="13"/><line x1="1" y1="7" x2="13" y2="7"/></svg>
+          Agregar materia
+        </button>
+      </div>
+
+      <div class="courses-table">
+        <div class="ct-head">
+          <div>#</div>
+          <div>Materia universidad DT</div>
+          <div class="col-tipo">Tipo</div>
+          <div>Equivalencia ITBA #1</div>
+          <div>Equivalencia ITBA #2</div>
+          <div>Estado</div>
+        </div>
+        <div id="rows-container"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Rules Editor Modal -->
+<div class="modal-overlay" id="rules-modal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Editar reglas por universidad</h3>
+      <button class="btn-close" onclick="closeModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px; color:var(--text2); margin-bottom:16px;">
+        Reglas vigentes cargadas desde Google Sheets. Para modificarlas, editá la hoja "Reglas" en el archivo compartido y recargá la app.
+      </p>
+      <div class="rules-editor-header">
+        <div>Universidad</div>
+        <div>Oblig.</div>
+        <div>Grupo A</div>
+        <div>Grupo B</div>
+        <div>Track</div>
+      </div>
+      <div id="rules-editor-body"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-primary" onclick="saveRules()">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT6vF9DN8_fqU85AafO6IgWDB-Y9-9LFvgW67-dM6xT_4wnUjRdrJVgpI04GRjymWFk8scsOamZXziM/pub?gid=1616467248&single=true&output=csv';
+const RULES_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT6vF9DN8_fqU85AafO6IgWDB-Y9-9LFvgW67-dM6xT_4wnUjRdrJVgpI04GRjymWFk8scsOamZXziM/pub?gid=1928770043&single=true&output=csv';
+const RULES_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT6vF9DN8_fqU85AafO6IgWDB-Y9-9LFvgW67-dM6xT_4wnUjRdrJVgpI04GRjymWFk8scsOamZXziM/pub?gid=1928770043&single=true&output=csv';
+
+const DEFAULT_RULES = {
+  'Polimi':     { oblig: 4, grupoA: 3, grupoB: 4, track: 3, label: 'Polimi' },
+  'Polito':     { oblig: 10, grupoA: 0, grupoB: 0, track: 3, label: 'Polito' },
+  'Rice-MIE':   { oblig: 6, grupoA: 1, grupoB: 4, track: 0, label: 'Rice — MIE' },
+  'Rice-MEML':  { oblig: 7, grupoA: 3, grupoB: 0, track: 0, label: 'Rice — MEML' },
+  'UniBo':      { oblig: 8, grupoA: 0, grupoB: 0, track: 0, label: 'UniBo' },
+  'Purdue':     { oblig: 0, grupoA: 0, grupoB: 0, track: 0, label: 'Purdue' },
+};
+
+const TRACKS = {
+  'Polimi': ['ANALYTICS FOR BUSINESS','BUSINESS STRATEGY AND TRANSFORMATION','DIGITAL BUSINESS INNOVATION','ENERGY MANAGEMENT','ENTREPRENEURSHIP','FINANCE','INDUSTRY 4.0','INDUSTRIAL MANAGEMENT','SUPPLY CHAIN MANAGEMENT'],
+  'Polito': ['Decision making for technology and social change','Finance','Gestione dell\'innovazione e imprenditorialità','Gestione e progettazione dei servizi digitali','ICT e data analytics per il management','Industria 4.0','Innovation management and Entrepreneurship','Management of Sustainability and Technology','Supply Chain Design'],
+  'UniBo': ['Grupo Produzione e tecnologie industriali','Grupo Sustainable Supply Chain','Grupo Innovazione tecnologica e di business'],
+};
+
+const UNI_RULES_TEXT = {
+  'Polimi': ['4 obligatorias (incluye Tesis Final)','3 del Grupo A (de 5 disponibles)','3 del track elegido','4 del Grupo B'],
+  'Polito': ['7 obligatorias año 1','3 obligatorias año 2','3 electivas de Table A (Track o Free Elective)'],
+  'Rice-MIE': ['6 obligatorias','1 del Grupo A (de 3 opciones)','4 del Grupo B'],
+  'Rice-MEML': ['7 obligatorias','3 del Grupo A (electivas)'],
+  'UniBo': ['8+ obligatorias comunes','Elegir 1 grupo temático','Obligatorias del grupo elegido + electiva del grupo'],
+  'Purdue': ['Sin obligatorias fijas','Verificar equivalencia individual de cada materia'],
+};
+
+let db = [];
+let rules = JSON.parse(JSON.stringify(DEFAULT_RULES));
+let rows = [];
+let rowCounter = 0;
+
+function loadingBar(pct) {
+  document.getElementById('loadingBar').style.width = pct + '%';
+}
+
+function parseCSV(text) {
+  const lines = text.split('\n');
+  const headers = parseCSVLine(lines[0]);
+  return lines.slice(1).filter(l => l.trim()).map(line => {
+    const vals = parseCSVLine(line);
+    const obj = {};
+    headers.forEach((h, i) => obj[h.trim()] = (vals[i] || '').trim());
+    return obj;
+  });
+}
+
+function parseCSVLine(line) {
+  const result = [];
+  let cur = '';
+  let inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') {
+      if (inQ && line[i+1] === '"') { cur += '"'; i++; }
+      else inQ = !inQ;
+    } else if (c === ',' && !inQ) {
+      result.push(cur); cur = '';
+    } else cur += c;
+  }
+  result.push(cur);
+  return result;
+}
+
+function uniKey(raw) {
+  const s = (raw || '').trim().toLowerCase();
+  if (s === 'polimi') return 'Polimi';
+  if (s === 'polito') return 'Polito';
+  if (s === 'rice') return null;
+  if (s === 'unibo') return 'UniBo';
+  if (s === 'purdue') return 'Purdue';
+  return null;
+}
+
+function applyRulesFromCSV(data) {
+  data.forEach(row => {
+    const key = (row['universidad'] || '').trim();
+    if (!key || !rules[key]) return;
+    if (row['oblig'] !== '') rules[key].oblig = parseInt(row['oblig']) || 0;
+    if (row['grupoA'] !== '') rules[key].grupoA = parseInt(row['grupoA']) || 0;
+    if (row['grupoB'] !== '') rules[key].grupoB = parseInt(row['grupoB']) || 0;
+    if (row['track'] !== '') rules[key].track = parseInt(row['track']) || 0;
+  });
+}
+
+async function loadData() {
+  loadingBar(10);
+  try {
+    const [dbResp, rulesResp] = await Promise.all([fetch(CSV_URL), fetch(RULES_CSV_URL)]);
+    loadingBar(60);
+    const [dbText, rulesText] = await Promise.all([dbResp.text(), rulesResp.text()]);
+    db = parseCSV(dbText);
+    applyRulesFromCSV(parseCSV(rulesText));
+    loadingBar(100);
+    document.getElementById('db-status').innerHTML = `<span style="color:var(--green)">✓ ${db.length} equivalencias cargadas</span>`;
+    setTimeout(() => loadingBar(0), 500);
+    document.getElementById('loading-state').style.display = 'none';
+    document.getElementById('app-content').style.display = 'block';
+    addRow(); addRow(); addRow();
+  } catch(e) {
+    document.getElementById('loading-state').innerHTML = `<div style="color:var(--red)">Error al cargar la base de datos.<br><small>${e.message}</small><br><br><button class="btn-primary" onclick="loadData()">Reintentar</button></div>`;
+    loadingBar(0);
+  }
+}
+
+function getUniData(uniSel) {
+  return db.filter(r => {
+    const raw = r['Universi\nName'] || r['Universi Name'] || '';
+    if (uniSel === 'Rice-MIE') return raw.toLowerCase() === 'rice' && (r['Master\nName'] || '').includes('MIE');
+    if (uniSel === 'Rice-MEML') return raw.toLowerCase() === 'rice' && (r['Master\nName'] || '').includes('MEML');
+    const k = uniKey(raw);
+    return k === uniSel;
+  });
+}
+
+function getMateriasDT(uniSel) {
+  return getUniData(uniSel).map(r => ({
+    name: (r['Name Materia\nDT'] || r['Name Materia DT'] || '').trim(),
+    type: (r['Type'] || '').trim(),
+    track: (r['Track \nName'] || r['Track Name'] || '').trim(),
+    itba1_code: (r['Code #1\nITBA'] || r['Code #1 ITBA'] || '').trim(),
+    itba1_name: (r['Name Materia #1\nITBA'] || r['Name Materia #1 ITBA'] || '').trim(),
+    itba2_code: (r['Code #2\nITBA'] || r['Code #2 ITBA'] || '').trim(),
+    itba2_name: (r['Name Materia #2\nITBA'] || r['Name Materia #2 ITBA'] || '').trim(),
+  })).filter(r => r.name);
+}
+
+function getEquiv(uniSel, materiaDT) {
+  const data = getMateriasDT(uniSel);
+  const matches = data.filter(r => r.name.toUpperCase() === materiaDT.toUpperCase());
+  const result = [];
+  matches.forEach(m => {
+    if (m.itba1_name && m.itba1_name !== 'nan') result.push({ code: m.itba1_code, name: m.itba1_name });
+    if (m.itba2_name && m.itba2_name !== 'nan') result.push({ code: m.itba2_code, name: m.itba2_name });
+  });
+  return result.filter((v, i, a) => a.findIndex(x => x.name === v.name) === i);
+}
+
+function getDTOptions(uniSel) {
+  const data = getMateriasDT(uniSel);
+  const seen = new Set();
+  return data.filter(r => { if (seen.has(r.name)) return false; seen.add(r.name); return true; });
+}
+
+function onUniChange() {
+  const uni = document.getElementById('sel-uni').value;
+  const trackGroup = document.getElementById('track-group');
+  const trackSel = document.getElementById('sel-track');
+  const rulesDisp = document.getElementById('rules-display');
+  const rulesContent = document.getElementById('rules-content');
+
+  trackSel.innerHTML = '<option value="">— Todos / Sin track —</option>';
+
+  if (TRACKS[uni]) {
+    trackGroup.style.display = 'block';
+    TRACKS[uni].forEach(t => {
+      const o = document.createElement('option');
+      o.value = t; o.textContent = t;
+      trackSel.appendChild(o);
+    });
+  } else {
+    trackGroup.style.display = 'none';
+  }
+
+  if (uni && UNI_RULES_TEXT[uni]) {
+    rulesDisp.style.display = 'block';
+    const items = UNI_RULES_TEXT[uni].map(r => `<li>${r}</li>`).join('');
+    rulesContent.innerHTML = `<strong>Requisitos</strong><ul>${items}</ul>`;
+  } else {
+    rulesDisp.style.display = 'none';
+  }
+
+  rows = [];
+  rowCounter = 0;
+  addRow(); addRow(); addRow();
+  renderRows();
+}
+
+function addRow() {
+  rowCounter++;
+  rows.push({ id: rowCounter, dtName: '', tipo: '', itba1: '', itba2: '' });
+  renderRows();
+}
+
+function removeRow(id) {
+  rows = rows.filter(r => r.id !== id);
+  renderRows();
+}
+
+function updateRow(id, field, value) {
+  const row = rows.find(r => r.id === id);
+  if (!row) return;
+  row[field] = value;
+  if (field === 'dtName') {
+    const uni = document.getElementById('sel-uni').value;
+    const equiv = getEquiv(uni, value);
+    if (equiv[0]) row.itba1 = equiv[0].name;
+    if (equiv[1]) row.itba2 = equiv[1].name;
+    else row.itba2 = '';
+  }
+  renderRows();
+}
+
+function getTypeOptions(uniSel) {
+  const typeMap = {
+    'Polimi': ['Obligatoria','Grupo A - Elige 3','Track Especial','Grupo B - Elige 4'],
+    'Polito': ['Obligatoria','Track Elective','Free Elective'],
+    'Rice-MIE': ['Obligatoria','Grupo A - Elige 1','Grupo B - Elige 4'],
+    'Rice-MEML': ['Obligatoria','Grupo A - Elige 3'],
+    'UniBo': ['Obligatoria','Obligatoria De Curso Integrado','Obligatoria Curso Integrado','Obligatoria de Grupo','Electiva de Grupo','Electiva','Libre'],
+    'Purdue': ['Electiva'],
+  };
+  return typeMap[uniSel] || [];
+}
+
+function renderRows() {
+  const uni = document.getElementById('sel-uni').value;
+  const container = document.getElementById('rows-container');
+  const dtOptions = uni ? getDTOptions(uni) : [];
+  const typeOptions = getTypeOptions(uni);
+
+  if (rows.length === 0) {
+    container.innerHTML = '<div class="empty-state"><p>Agregá materias para verificar equivalencias.</p></div>';
+    updateStats();
+    return;
+  }
+
+  container.innerHTML = rows.map((row, idx) => {
+    const equiv = uni ? getEquiv(uni, row.dtName) : [];
+    const hasItba = row.itba1.trim() || row.itba2.trim();
+    const hasDT = row.dtName.trim();
+
+    let status, badgeClass;
+    if (!hasDT) { status = '—'; badgeClass = 'badge-empty'; }
+    else if (!hasItba) { status = 'Sin equiv.'; badgeClass = 'badge-warn'; }
+    else {
+      const isMatch1 = !row.itba1 || equiv.some(e => e.name.toLowerCase() === row.itba1.toLowerCase());
+      const isMatch2 = !row.itba2 || equiv.some(e => e.name.toLowerCase() === row.itba2.toLowerCase());
+      if (isMatch1 && isMatch2) { status = 'OK'; badgeClass = 'badge-ok'; }
+      else { status = 'Revisar'; badgeClass = 'badge-error'; }
+    }
+
+    const dtOpts = dtOptions.map(o => `<option value="${escHtml(o.name)}" ${row.dtName === o.name ? 'selected' : ''}>${escHtml(o.name)}</option>`).join('');
+    const typeOpts = typeOptions.map(t => `<option value="${escHtml(t)}" ${row.tipo === t ? 'selected' : ''}>${t}</option>`).join('');
+
+    const equivHint = hasDT && equiv.length > 0
+      ? `<div class="equiv-hint">Equiv. preaprobadas: ${equiv.map(e => `<span class="equiv-match">${escHtml(e.name)}</span>`).join(', ')}</div>`
+      : hasDT ? `<div class="equiv-hint equiv-no-match">No hay equiv. preaprobada en la base</div>` : '';
+
+    return `<div class="ct-row${!hasDT ? ' empty-row' : ''}">
+      <div class="row-num">${idx + 1}</div>
+      <div>
+        ${uni ? `<select onchange="updateRow(${row.id},'dtName',this.value)"><option value="">— Elegir materia —</option>${dtOpts}</select>` : '<input type="text" placeholder="Primero elegí universidad" disabled>'}
+        ${equivHint}
+      </div>
+      <div class="col-tipo">
+        ${typeOptions.length ? `<select onchange="updateRow(${row.id},'tipo',this.value)"><option value="">— Tipo —</option>${typeOpts}</select>` : '<input type="text" placeholder="Tipo" value="${escHtml(row.tipo)}" onchange="updateRow(${row.id},\'tipo\',this.value)">'}
+      </div>
+      <div class="col-itba">
+        <input type="text" placeholder="Materia ITBA #1" value="${escHtml(row.itba1)}" oninput="updateRow(${row.id},'itba1',this.value)">
+      </div>
+      <div class="col-itba">
+        <input type="text" placeholder="Materia ITBA #2 (si aplica)" value="${escHtml(row.itba2)}" oninput="updateRow(${row.id},'itba2',this.value)">
+      </div>
+      <div>
+        <span class="status-badge ${badgeClass}">${status}</span>
+        <button class="btn-del" onclick="removeRow(${row.id})" title="Eliminar fila">×</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  updateStats();
+}
+
+function escHtml(s) {
+  return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function updateStats() {
+  const uni = document.getElementById('sel-uni').value;
+  const filledRows = rows.filter(r => r.dtName.trim());
+  const withEquiv = filledRows.filter(r => r.itba1.trim() || r.itba2.trim());
+  const withoutEquiv = filledRows.filter(r => !r.itba1.trim() && !r.itba2.trim());
+
+  document.getElementById('sv-total').textContent = filledRows.length;
+  document.getElementById('sv-ok').textContent = withEquiv.length;
+  document.getElementById('sv-missing').textContent = withoutEquiv.length;
+
+  const sc_ok = document.getElementById('sc-ok');
+  const sc_missing = document.getElementById('sc-missing');
+  sc_ok.className = 'stat-card' + (withEquiv.length > 0 ? ' ok' : '');
+  sc_missing.className = 'stat-card' + (withoutEquiv.length > 0 ? ' warn' : '');
+
+  updateValidationChips(uni, filledRows);
+}
+
+function countByType(filledRows, pattern) {
+  return filledRows.filter(r => (r.tipo || '').toLowerCase().includes(pattern.toLowerCase())).length;
+}
+
+function updateValidationChips(uni, filledRows) {
+  const container = document.getElementById('validation-chips');
+  if (!uni) { container.innerHTML = ''; document.getElementById('sv-valid').textContent = '—'; return; }
+
+  const r = rules[uni] || DEFAULT_RULES[uni];
+  const chips = [];
+  let allOk = true;
+
+  const oblig = countByType(filledRows, 'obligatoria');
+  const grupoA = filledRows.filter(r => r.tipo.toLowerCase().includes('grupo a')).length;
+  const grupoB = filledRows.filter(r => r.tipo.toLowerCase().includes('grupo b')).length;
+  const track = filledRows.filter(r => r.tipo.toLowerCase().includes('track')).length;
+
+  if (r.oblig > 0) {
+    const ok = oblig >= r.oblig;
+    if (!ok) allOk = false;
+    chips.push({ ok, label: `Obligatorias: ${oblig}/${r.oblig}` });
+  }
+  if (r.grupoA > 0) {
+    const ok = grupoA === r.grupoA;
+    if (!ok) allOk = false;
+    chips.push({ ok, label: `Grupo A: ${grupoA}/${r.grupoA}` });
+  }
+  if (r.grupoB > 0) {
+    const ok = grupoB === r.grupoB;
+    if (!ok) allOk = false;
+    chips.push({ ok, label: `Grupo B: ${grupoB}/${r.grupoB}` });
+  }
+  if (r.track > 0) {
+    const ok = track === r.track;
+    if (!ok) allOk = false;
+    chips.push({ ok, label: `Track: ${track}/${r.track}` });
+  }
+
+  const missing = filledRows.filter(r => !r.itba1.trim() && !r.itba2.trim()).length;
+  if (missing > 0) {
+    allOk = false;
+    chips.push({ ok: false, label: `${missing} sin equivalencia ITBA` });
+  }
+
+  if (chips.length === 0) {
+    chips.push({ ok: true, neutral: true, label: 'Sin reglas de cantidad (Purdue: verificar cada equiv.)' });
+  }
+
+  container.innerHTML = chips.map(c => {
+    const cls = c.neutral ? 'neutral' : c.ok ? 'ok' : 'fail';
+    return `<span class="chip ${cls}"><span class="chip-dot"></span>${c.label}</span>`;
+  }).join('');
+
+  const validEl = document.getElementById('sv-valid');
+  if (chips.every(c => c.neutral)) {
+    validEl.textContent = '—';
+    document.getElementById('sc-valid').className = 'stat-card';
+  } else if (allOk) {
+    validEl.textContent = '✓';
+    document.getElementById('sc-valid').className = 'stat-card ok';
+  } else {
+    validEl.textContent = '✗';
+    document.getElementById('sc-valid').className = 'stat-card warn';
+  }
+}
+
+function openRulesEditor() {
+  const body = document.getElementById('rules-editor-body');
+  body.innerHTML = Object.entries(DEFAULT_RULES).map(([key, def]) => {
+    const cur = rules[key] || def;
+    const fmt = n => n > 0 ? n : '—';
+    return `<div class="rules-editor-row" style="grid-template-columns:1fr 80px 80px 80px 80px">
+      <div class="rule-uni">${def.label}</div>
+      <div style="text-align:center;font-family:var(--mono);font-size:14px">${fmt(cur.oblig)}</div>
+      <div style="text-align:center;font-family:var(--mono);font-size:14px">${fmt(cur.grupoA)}</div>
+      <div style="text-align:center;font-family:var(--mono);font-size:14px">${fmt(cur.grupoB)}</div>
+      <div style="text-align:center;font-family:var(--mono);font-size:14px">${fmt(cur.track)}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('rules-modal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('rules-modal').classList.remove('open');
+}
+
+function saveRules() {
+  closeModal();
+}
+
+function resetRules() {
+  closeModal();
+}
+
+function reloadData() {
+  document.getElementById('loading-state').style.display = 'block';
+  document.getElementById('loading-state').innerHTML = 'Recargando base de datos...';
+  document.getElementById('app-content').style.display = 'none';
+  db = [];
+  rules = JSON.parse(JSON.stringify(DEFAULT_RULES));
+  loadData();
+}
+
+function exportResult() {
+  const uni = document.getElementById('sel-uni').value || '(sin seleccionar)';
+  const track = document.getElementById('sel-track') ? document.getElementById('sel-track').value : '';
+  const filledRows = rows.filter(r => r.dtName.trim());
+
+  let txt = `VERIFICADOR DE EQUIVALENCIAS — ITBA SCE\n`;
+  txt += `Universidad: ${uni}${track ? ' | Track: ' + track : ''}\n`;
+  txt += `Fecha: ${new Date().toLocaleDateString('es-AR')}\n\n`;
+  txt += `${'#'.padEnd(4)}${'Materia DT'.padEnd(45)}${'Tipo'.padEnd(25)}${'ITBA #1'.padEnd(35)}${'ITBA #2'.padEnd(35)}Estado\n`;
+  txt += '─'.repeat(150) + '\n';
+
+  filledRows.forEach((row, i) => {
+    const equiv = getEquiv(uni, row.dtName);
+    const hasItba = row.itba1.trim() || row.itba2.trim();
+    const isOk = hasItba && (!row.itba1 || equiv.some(e => e.name.toLowerCase() === row.itba1.toLowerCase()));
+    const status = !hasItba ? 'SIN EQUIV.' : isOk ? 'OK' : 'REVISAR';
+    txt += `${String(i+1).padEnd(4)}${(row.dtName||'').substring(0,44).padEnd(45)}${(row.tipo||'').substring(0,24).padEnd(25)}${(row.itba1||'').substring(0,34).padEnd(35)}${(row.itba2||'').substring(0,34).padEnd(35)}${status}\n`;
+  });
+
+  const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `equivalencias_${uni.replace(/[^a-z0-9]/gi,'_')}_${new Date().toISOString().slice(0,10)}.txt`;
+  a.click();
+}
+
+document.getElementById('rules-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+loadData();
+</script>
+</body>
+</html>
